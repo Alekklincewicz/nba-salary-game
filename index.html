@@ -2,7 +2,9 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
     <title>NBA Salary Cap Game</title>
     <style>
         * {
@@ -22,6 +24,13 @@
         .container {
             max-width: 900px;
             margin: 0 auto;
+            width: 100%;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 0 10px;
+            }
         }
 
         .header {
@@ -41,12 +50,29 @@
             opacity: 0.9;
         }
 
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 1.8rem;
+            }
+            
+            .header p {
+                font-size: 0.95rem;
+            }
+        }
+
         .game-card {
             background: white;
             border-radius: 16px;
             padding: 30px;
             box-shadow: 0 10px 40px rgba(0,0,0,0.2);
             margin-bottom: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .game-card {
+                padding: 20px 15px;
+                border-radius: 12px;
+            }
         }
 
         .stats-bar {
@@ -56,6 +82,28 @@
             padding: 15px;
             background: #f7fafc;
             border-radius: 10px;
+        }
+
+        @media (max-width: 768px) {
+            .stats-bar {
+                flex-direction: column;
+                gap: 15px;
+            }
+            
+            .stat {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+            }
+            
+            .stat-value {
+                order: 2;
+            }
+            
+            .stat-label {
+                order: 1;
+                margin-top: 0;
+            }
         }
 
         .stat {
@@ -82,6 +130,18 @@
             background: #f7fafc;
             border-radius: 12px;
             overflow: hidden;
+        }
+
+        @media (max-width: 768px) {
+            .salary-chart {
+                height: 400px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .salary-chart {
+                height: 350px;
+            }
         }
 
         .treemap-container {
@@ -149,6 +209,12 @@
             margin-bottom: 20px;
         }
 
+        @media (max-width: 768px) {
+            .input-group {
+                flex-direction: column;
+            }
+        }
+
         #teamInput {
             flex: 2;
             padding: 15px;
@@ -171,6 +237,14 @@
             border-radius: 10px;
             cursor: pointer;
             transition: all 0.3s;
+        }
+
+        @media (max-width: 768px) {
+            .btn {
+                width: 100%;
+                padding: 18px;
+                font-size: 1.1rem;
+            }
         }
 
         .btn-primary {
@@ -205,6 +279,19 @@
             display: flex;
             align-items: center;
             gap: 10px;
+        }
+
+        @media (max-width: 768px) {
+            .guess-item {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 8px;
+            }
+            
+            .guess-feedback {
+                width: 100%;
+                justify-content: flex-start;
+            }
         }
 
         @keyframes slideIn {
@@ -638,8 +725,13 @@
             document.getElementById('playerCount').textContent = currentTeam.players.length;
             document.getElementById('guessCount').textContent = `${guesses.length}/${maxGuesses}`;
             
+            // Get responsive dimensions
+            const chartContainer = document.getElementById('salaryChart');
+            const width = chartContainer.offsetWidth;
+            const height = chartContainer.offsetHeight;
+            
             // Create treemap layout
-            const treemapHTML = createTreemap(currentTeam.players, 800, 500, totalSalary);
+            const treemapHTML = createTreemap(currentTeam.players, width, height, totalSalary);
             
             document.getElementById('salaryChart').innerHTML = `
                 <div class="treemap-container">
@@ -938,6 +1030,17 @@
 
         // Initialize game on load
         newGame();
+        
+        // Handle window resize for responsive treemap
+        let resizeTimer;
+        window.addEventListener('resize', function() {
+            clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(function() {
+                if (currentTeam) {
+                    renderGame();
+                }
+            }, 250);
+        });
     </script>
 </body>
 </html>
