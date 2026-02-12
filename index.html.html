@@ -1,0 +1,914 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NBA Salary Cap Game</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .game-card {
+            background: white;
+            border-radius: 16px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            margin-bottom: 20px;
+        }
+
+        .stats-bar {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 25px;
+            padding: 15px;
+            background: #f7fafc;
+            border-radius: 10px;
+        }
+
+        .stat {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .stat-label {
+            font-size: 0.85rem;
+            color: #718096;
+            margin-top: 5px;
+        }
+
+        .salary-chart {
+            margin: 25px 0;
+            position: relative;
+            width: 100%;
+            height: 500px;
+            background: #f7fafc;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .treemap-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-wrap: wrap;
+            align-content: flex-start;
+        }
+
+        .treemap-cell {
+            position: relative;
+            border: 2px solid white;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 8px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            overflow: hidden;
+        }
+
+        .treemap-cell:hover {
+            filter: brightness(1.1);
+            transform: scale(1.02);
+            z-index: 10;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+
+        .cell-height {
+            font-weight: bold;
+            color: white;
+            text-shadow: 1px 1px 3px rgba(0,0,0,0.5);
+            margin-bottom: 2px;
+            line-height: 1.2;
+        }
+
+        .cell-position {
+            font-weight: 600;
+            color: rgba(255,255,255,0.95);
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+            margin-bottom: 4px;
+            line-height: 1.2;
+        }
+
+        .cell-salary {
+            font-weight: bold;
+            color: white;
+            text-shadow: 1px 1px 3px rgba(0,0,0,0.5);
+            background: rgba(0,0,0,0.2);
+            padding: 2px 6px;
+            border-radius: 4px;
+            line-height: 1.2;
+        }
+
+        .guess-section {
+            margin-top: 30px;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        #teamInput {
+            flex: 2;
+            padding: 15px;
+            font-size: 1rem;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            transition: border-color 0.3s;
+        }
+
+        #teamInput:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .btn {
+            padding: 15px 30px;
+            font-size: 1rem;
+            font-weight: 600;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #e2e8f0;
+            color: #4a5568;
+        }
+
+        .btn-secondary:hover {
+            background: #cbd5e0;
+        }
+
+        .guesses {
+            margin-top: 20px;
+        }
+
+        .guess-item {
+            padding: 12px 15px;
+            margin-bottom: 8px;
+            border-radius: 8px;
+            font-weight: 500;
+            animation: slideIn 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .guess-team-name {
+            flex: 1;
+        }
+
+        .guess-feedback {
+            display: flex;
+            gap: 8px;
+        }
+
+        .feedback-badge {
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .badge-correct {
+            background: #9ae6b4;
+            color: #22543d;
+        }
+
+        .badge-incorrect {
+            background: #feb2b2;
+            color: #742a2a;
+        }
+
+        .badge-neutral {
+            background: #e2e8f0;
+            color: #4a5568;
+        }
+
+        .guess-correct {
+            background: #c6f6d5;
+            color: #22543d;
+            border-left: 4px solid #38a169;
+        }
+
+        .guess-incorrect {
+            background: #fed7d7;
+            color: #742a2a;
+            border-left: 4px solid #e53e3e;
+        }
+
+        .result-message {
+            margin-top: 20px;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            font-size: 1.1rem;
+            font-weight: 600;
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .result-win {
+            background: #c6f6d5;
+            color: #22543d;
+        }
+
+        .result-lose {
+            background: #fed7d7;
+            color: #742a2a;
+        }
+
+        .autocomplete-items {
+            position: absolute;
+            border: 1px solid #e2e8f0;
+            border-top: none;
+            z-index: 99;
+            top: 100%;
+            left: 0;
+            right: 0;
+            max-height: 200px;
+            overflow-y: auto;
+            background: white;
+            border-radius: 0 0 10px 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .autocomplete-item {
+            padding: 12px;
+            cursor: pointer;
+            border-bottom: 1px solid #f7fafc;
+        }
+
+        .autocomplete-item:hover {
+            background: #f7fafc;
+        }
+
+        .autocomplete-active {
+            background: #667eea !important;
+            color: white;
+        }
+
+        .input-wrapper {
+            position: relative;
+            flex: 2;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🏀 NBA Salary Cap Game</h1>
+            <p>Guess the team based on their salary cap distribution</p>
+        </div>
+
+        <div class="game-card">
+            <div class="stats-bar">
+                <div class="stat">
+                    <div class="stat-value" id="totalCap">$0M</div>
+                    <div class="stat-label">Total Payroll</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value" id="playerCount">0</div>
+                    <div class="stat-label">Players</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value" id="guessCount">0/6</div>
+                    <div class="stat-label">Guesses</div>
+                </div>
+            </div>
+
+            <div class="salary-chart" id="salaryChart"></div>
+
+            <div class="guess-section" id="guessSection">
+                <div class="input-group">
+                    <div class="input-wrapper">
+                        <input type="text" id="teamInput" placeholder="Enter team name..." autocomplete="off">
+                        <div id="autocomplete-list" class="autocomplete-items"></div>
+                    </div>
+                    <button class="btn btn-primary" onclick="submitGuess()">Submit Guess</button>
+                </div>
+            </div>
+
+            <div class="guesses" id="guessesList"></div>
+            <div id="resultMessage"></div>
+            
+            <div style="margin-top: 20px; text-align: center;">
+                <button class="btn btn-secondary" onclick="newGame()">New Game</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const NBA_TEAMS = [
+            { name: 'Atlanta Hawks', conference: 'East', division: 'Southeast' },
+            { name: 'Boston Celtics', conference: 'East', division: 'Atlantic' },
+            { name: 'Brooklyn Nets', conference: 'East', division: 'Atlantic' },
+            { name: 'Charlotte Hornets', conference: 'East', division: 'Southeast' },
+            { name: 'Chicago Bulls', conference: 'East', division: 'Central' },
+            { name: 'Cleveland Cavaliers', conference: 'East', division: 'Central' },
+            { name: 'Dallas Mavericks', conference: 'West', division: 'Southwest' },
+            { name: 'Denver Nuggets', conference: 'West', division: 'Northwest' },
+            { name: 'Detroit Pistons', conference: 'East', division: 'Central' },
+            { name: 'Golden State Warriors', conference: 'West', division: 'Pacific' },
+            { name: 'Houston Rockets', conference: 'West', division: 'Southwest' },
+            { name: 'Indiana Pacers', conference: 'East', division: 'Central' },
+            { name: 'LA Clippers', conference: 'West', division: 'Pacific' },
+            { name: 'Los Angeles Lakers', conference: 'West', division: 'Pacific' },
+            { name: 'Memphis Grizzlies', conference: 'West', division: 'Southwest' },
+            { name: 'Miami Heat', conference: 'East', division: 'Southeast' },
+            { name: 'Milwaukee Bucks', conference: 'East', division: 'Central' },
+            { name: 'Minnesota Timberwolves', conference: 'West', division: 'Northwest' },
+            { name: 'New Orleans Pelicans', conference: 'West', division: 'Southwest' },
+            { name: 'New York Knicks', conference: 'East', division: 'Atlantic' },
+            { name: 'Oklahoma City Thunder', conference: 'West', division: 'Northwest' },
+            { name: 'Orlando Magic', conference: 'East', division: 'Southeast' },
+            { name: 'Philadelphia 76ers', conference: 'East', division: 'Atlantic' },
+            { name: 'Phoenix Suns', conference: 'West', division: 'Pacific' },
+            { name: 'Portland Trail Blazers', conference: 'West', division: 'Northwest' },
+            { name: 'Sacramento Kings', conference: 'West', division: 'Pacific' },
+            { name: 'San Antonio Spurs', conference: 'West', division: 'Southwest' },
+            { name: 'Toronto Raptors', conference: 'East', division: 'Atlantic' },
+            { name: 'Utah Jazz', conference: 'West', division: 'Northwest' },
+            { name: 'Washington Wizards', conference: 'East', division: 'Southeast' }
+        ];
+
+        const SAMPLE_TEAMS = [
+            {
+                name: 'Golden State Warriors',
+                conference: 'West',
+                division: 'Pacific',
+                players: [
+                    { height: '6\'2"', position: 'PG', salary: 59606817 },  // Curry
+                    { height: '6\'6"', position: 'SF', salary: 54126450 },  // Butler
+                    { height: '6\'6"', position: 'PF', salary: 25892857 },  // Green
+                    { height: '6\'7"', position: 'SF', salary: 22500000 },  // Kuminga
+                    { height: '6\'5"', position: 'SG', salary: 11574074 },  // Moody
+                    { height: '6\'4"', position: 'SG', salary: 9219512 },   // Hield
+                    { height: '6\'8"', position: 'C', salary: 5685000 },    // Horford
+                    { height: '6\'4"', position: 'PG', salary: 3687960 },   // Podziemski
+                    { height: '6\'2"', position: 'PG', salary: 3080921 },   // Melton
+                    { height: '6\'2"', position: 'PG', salary: 2296274 },   // GP2
+                    { height: '6\'7"', position: 'SF', salary: 2221677 },   // Santos
+                    { height: '6\'9"', position: 'PF', salary: 2221677 },   // TJD
+                    { height: '7\'0"', position: 'C', salary: 1935377 }     // Post
+                ]
+            },
+            {
+                name: 'Boston Celtics',
+                conference: 'East',
+                division: 'Atlantic',
+                players: [
+                    { height: '6\'8"', position: 'SF', salary: 54126450 },  // Tatum
+                    { height: '6\'6"', position: 'SG', salary: 53142264 },  // Brown
+                    { height: '6\'11"', position: 'C', salary: 30000000 },  // Porzingis
+                    { height: '6\'0"', position: 'PG', salary: 20000000 },  // Holiday
+                    { height: '6\'5"', position: 'SG', salary: 12000000 },  // White
+                    { height: '6\'7"', position: 'SF', salary: 10000000 },  
+                    { height: '6\'9"', position: 'PF', salary: 6000000 },   
+                    { height: '6\'4"', position: 'PG', salary: 3000000 },   
+                    { height: '6\'8"', position: 'PF', salary: 2500000 },   
+                    { height: '6\'10"', position: 'C', salary: 2000000 },   
+                    { height: '6\'3"', position: 'SG', salary: 1900000 }    
+                ]
+            },
+            {
+                name: 'Los Angeles Lakers',
+                conference: 'West',
+                division: 'Pacific',
+                players: [
+                    { height: '6\'7"', position: 'PG', salary: 54126450 },  // Luka
+                    { height: '6\'9"', position: 'SF', salary: 52627153 },  // LeBron
+                    { height: '6\'5"', position: 'SG', salary: 18000000 },  
+                    { height: '6\'1"', position: 'PG', salary: 17000000 },  
+                    { height: '6\'8"', position: 'SF', salary: 11000000 },  
+                    { height: '6\'10"', position: 'C', salary: 10000000 },  
+                    { height: '6\'7"', position: 'SF', salary: 5500000 },   
+                    { height: '6\'3"', position: 'PG', salary: 3000000 },   
+                    { height: '6\'5"', position: 'SG', salary: 2800000 },   
+                    { height: '6\'9"', position: 'PF', salary: 2200000 },   
+                    { height: '6\'8"', position: 'SF', salary: 1900000 }    
+                ]
+            },
+            {
+                name: 'Philadelphia 76ers',
+                conference: 'East',
+                division: 'Atlantic',
+                players: [
+                    { height: '7\'0"', position: 'C', salary: 55224526 },   // Embiid
+                    { height: '6\'8"', position: 'SF', salary: 51666090 },  // George
+                    { height: '6\'2"', position: 'PG', salary: 37958760 },  // Maxey
+                    { height: '6\'10"', position: 'PF', salary: 12000000 }, 
+                    { height: '6\'7"', position: 'SF', salary: 9000000 },   
+                    { height: '6\'5"', position: 'SG', salary: 8000000 },   
+                    { height: '6\'3"', position: 'PG', salary: 5000000 },   
+                    { height: '6\'9"', position: 'PF', salary: 3500000 },   
+                    { height: '6\'11"', position: 'C', salary: 2800000 },   
+                    { height: '6\'4"', position: 'SG', salary: 2100000 }    
+                ]
+            },
+            {
+                name: 'Milwaukee Bucks',
+                conference: 'East',
+                division: 'Central',
+                players: [
+                    { height: '6\'11"', position: 'PF', salary: 54126450 }, // Giannis
+                    { height: '6\'4"', position: 'PG', salary: 48000000 },  // Dame
+                    { height: '6\'7"', position: 'SF', salary: 26000000 },  
+                    { height: '6\'10"', position: 'C', salary: 19000000 },  
+                    { height: '6\'5"', position: 'SG', salary: 13000000 },  
+                    { height: '6\'8"', position: 'PF', salary: 11000000 },  
+                    { height: '6\'3"', position: 'PG', salary: 9000000 },   
+                    { height: '6\'6"', position: 'SF', salary: 5500000 },   
+                    { height: '6\'4"', position: 'SG', salary: 3000000 },   
+                    { height: '6\'9"', position: 'PF', salary: 2400000 },   
+                    { height: '7\'0"', position: 'C', salary: 1900000 }     
+                ]
+            },
+            {
+                name: 'Phoenix Suns',
+                conference: 'West',
+                division: 'Pacific',
+                players: [
+                    { height: '6\'4"', position: 'SG', salary: 53142264 },  // Booker
+                    { height: '6\'10"', position: 'PF', salary: 46000000 }, 
+                    { height: '6\'5"', position: 'PG', salary: 31000000 },  
+                    { height: '6\'11"', position: 'C', salary: 21000000 },  
+                    { height: '6\'5"', position: 'SG', salary: 14000000 },  
+                    { height: '6\'8"', position: 'SF', salary: 10000000 },  
+                    { height: '6\'3"', position: 'PG', salary: 6500000 },   
+                    { height: '6\'7"', position: 'PF', salary: 3800000 },   
+                    { height: '6\'9"', position: 'C', salary: 2700000 },    
+                    { height: '6\'4"', position: 'PG', salary: 2100000 }    
+                ]
+            },
+            {
+                name: 'Denver Nuggets',
+                conference: 'West',
+                division: 'Northwest',
+                players: [
+                    { height: '6\'11"', position: 'C', salary: 55224526 },  // Jokic
+                    { height: '6\'4"', position: 'PG', salary: 46394100 },  // Murray
+                    { height: '6\'8"', position: 'SF', salary: 32000000 },  
+                    { height: '6\'6"', position: 'SG', salary: 15000000 },  
+                    { height: '6\'10"', position: 'PF', salary: 13500000 }, 
+                    { height: '6\'7"', position: 'SF', salary: 10000000 },  
+                    { height: '6\'3"', position: 'PG', salary: 7500000 },   
+                    { height: '6\'5"', position: 'SG', salary: 5000000 },   
+                    { height: '6\'9"', position: 'PF', salary: 3000000 },   
+                    { height: '6\'10"', position: 'C', salary: 2300000 },   
+                    { height: '6\'4"', position: 'PG', salary: 1900000 }    
+                ]
+            },
+            {
+                name: 'Dallas Mavericks',
+                conference: 'West',
+                division: 'Southwest',
+                players: [
+                    { height: '6\'11"', position: 'PF', salary: 54126450 }, // AD
+                    { height: '6\'2"', position: 'PG', salary: 43000000 },  // Kyrie
+                    { height: '6\'10"', position: 'C', salary: 12000000 },  
+                    { height: '6\'5"', position: 'SG', salary: 10500000 },  
+                    { height: '6\'8"', position: 'PF', salary: 10000000 },  
+                    { height: '6\'9"', position: 'SF', salary: 8500000 },   
+                    { height: '6\'2"', position: 'PG', salary: 7000000 },   
+                    { height: '6\'6"', position: 'SF', salary: 4000000 },   
+                    { height: '6\'11"', position: 'C', salary: 3000000 },   
+                    { height: '6\'4"', position: 'PG', salary: 2200000 },   
+                    { height: '6\'7"', position: 'SF', salary: 1900000 }    
+                ]
+            },
+            {
+                name: 'New York Knicks',
+                conference: 'East',
+                division: 'Atlantic',
+                players: [
+                    { height: '7\'0"', position: 'C', salary: 54126450 },   // KAT
+                    { height: '6\'7"', position: 'SF', salary: 39568966 },  // OG
+                    { height: '6\'5"', position: 'SG', salary: 28000000 },  
+                    { height: '6\'3"', position: 'PG', salary: 24000000 },  
+                    { height: '6\'8"', position: 'PF', salary: 12000000 },  
+                    { height: '6\'6"', position: 'SF', salary: 9000000 },   
+                    { height: '6\'10"', position: 'C', salary: 7000000 },   
+                    { height: '6\'4"', position: 'SG', salary: 4000000 },   
+                    { height: '6\'7"', position: 'PF', salary: 3000000 },   
+                    { height: '6\'2"', position: 'PG', salary: 2000000 }    
+                ]
+            },
+            {
+                name: 'LA Clippers',
+                conference: 'West',
+                division: 'Pacific',
+                players: [
+                    { height: '6\'4"', position: 'SG', salary: 53666270 },  // Beal
+                    { height: '6\'7"', position: 'SF', salary: 50000000 },  // Kawhi
+                    { height: '6\'5"', position: 'PG', salary: 39182692 },  // Harden
+                    { height: '6\'11"', position: 'C', salary: 15000000 },  
+                    { height: '6\'8"', position: 'PF', salary: 11000000 },  
+                    { height: '6\'6"', position: 'SF', salary: 9000000 },   
+                    { height: '6\'3"', position: 'PG', salary: 7000000 },   
+                    { height: '6\'9"', position: 'PF', salary: 5000000 },   
+                    { height: '6\'4"', position: 'SG', salary: 3500000 },   
+                    { height: '6\'10"', position: 'C', salary: 2000000 }    
+                ]
+            }
+        ];
+
+        let currentTeam = null;
+        let guesses = [];
+        let maxGuesses = 4;
+        let gameOver = false;
+
+        function formatSalary(salary) {
+            return '$' + (salary / 1000000).toFixed(1) + 'M';
+        }
+
+        function newGame() {
+            currentTeam = SAMPLE_TEAMS[Math.floor(Math.random() * SAMPLE_TEAMS.length)];
+            guesses = [];
+            gameOver = false;
+            
+            // Sort players by salary descending
+            currentTeam.players.sort((a, b) => b.salary - a.salary);
+            
+            renderGame();
+        }
+
+        function renderGame() {
+            const totalSalary = currentTeam.players.reduce((sum, p) => sum + p.salary, 0);
+            
+            document.getElementById('totalCap').textContent = formatSalary(totalSalary);
+            document.getElementById('playerCount').textContent = currentTeam.players.length;
+            document.getElementById('guessCount').textContent = `${guesses.length}/${maxGuesses}`;
+            
+            // Create treemap layout
+            const treemapHTML = createTreemap(currentTeam.players, 800, 500, totalSalary);
+            
+            document.getElementById('salaryChart').innerHTML = `
+                <div class="treemap-container">
+                    ${treemapHTML}
+                </div>
+            `;
+            
+            renderGuesses();
+        }
+
+        function createTreemap(players, width, height, totalSalary) {
+            // Color scheme based on position
+            const positionColors = {
+                'PG': '#667eea',  // Blue-purple
+                'SG': '#48bb78',  // Green
+                'SF': '#f6ad55',  // Orange
+                'PF': '#fc8181',  // Red
+                'C': '#805ad5'    // Deep purple
+            };
+            
+            // Calculate percentages and create layout
+            let items = players.map((player, index) => ({
+                ...player,
+                percentage: (player.salary / totalSalary) * 100,
+                color: positionColors[player.position] || '#718096'
+            }));
+            
+            // Simple treemap algorithm using squarified layout
+            let result = [];
+            let currentY = 0;
+            let i = 0;
+            
+            while (i < items.length) {
+                let remainingHeight = height - currentY;
+                let rowItems = [];
+                let rowArea = 0;
+                let totalArea = items.slice(i).reduce((sum, item) => sum + item.percentage, 0);
+                
+                // Calculate how many items fit in this row
+                let targetRowArea = Math.min(30, totalArea); // Aim for rows that take ~30% of remaining space
+                
+                while (i < items.length && rowArea < targetRowArea) {
+                    rowItems.push(items[i]);
+                    rowArea += items[i].percentage;
+                    i++;
+                    
+                    if (rowArea >= targetRowArea && i < items.length - 2) break;
+                }
+                
+                // Calculate row height based on area
+                let rowHeight = (rowArea / 100) * height;
+                
+                // Distribute items horizontally in the row
+                let currentX = 0;
+                rowItems.forEach(item => {
+                    let itemWidth = (item.percentage / rowArea) * width;
+                    
+                    // Calculate font sizes based on cell dimensions
+                    const cellArea = itemWidth * rowHeight;
+                    const minDimension = Math.min(itemWidth, rowHeight);
+                    
+                    // Scale font size based on cell area and minimum dimension
+                    const baseFontSize = Math.sqrt(cellArea) / 12;
+                    const heightFontSize = Math.max(10, Math.min(24, baseFontSize * 1.2));
+                    const positionFontSize = Math.max(8, Math.min(18, baseFontSize * 0.95));
+                    const salaryFontSize = Math.max(9, Math.min(20, baseFontSize * 1.0));
+                    
+                    // For very small cells, hide some text
+                    const showAllText = minDimension > 60;
+                    const showMinimalText = minDimension > 40;
+                    
+                    let cellContent = '';
+                    if (showAllText) {
+                        cellContent = `
+                            <div class="cell-height" style="font-size: ${heightFontSize}px;">${item.height}</div>
+                            <div class="cell-position" style="font-size: ${positionFontSize}px;">${item.position}</div>
+                            <div class="cell-salary" style="font-size: ${salaryFontSize}px;">${formatSalary(item.salary)}</div>
+                        `;
+                    } else if (showMinimalText) {
+                        cellContent = `
+                            <div class="cell-position" style="font-size: ${positionFontSize}px;">${item.position}</div>
+                            <div class="cell-salary" style="font-size: ${salaryFontSize}px;">${formatSalary(item.salary)}</div>
+                        `;
+                    } else {
+                        cellContent = `
+                            <div class="cell-salary" style="font-size: ${salaryFontSize}px;">${formatSalary(item.salary)}</div>
+                        `;
+                    }
+                    
+                    result.push(`
+                        <div class="treemap-cell" style="
+                            position: absolute;
+                            left: ${currentX}px;
+                            top: ${currentY}px;
+                            width: ${itemWidth}px;
+                            height: ${rowHeight}px;
+                            background: linear-gradient(135deg, ${item.color} 0%, ${adjustColor(item.color, -20)} 100%);
+                        ">
+                            ${cellContent}
+                        </div>
+                    `);
+                    
+                    currentX += itemWidth;
+                });
+                
+                currentY += rowHeight;
+            }
+            
+            return result.join('');
+        }
+
+        function adjustColor(color, percent) {
+            // Simple color adjustment for gradient
+            const num = parseInt(color.replace('#', ''), 16);
+            const amt = Math.round(2.55 * percent);
+            const R = (num >> 16) + amt;
+            const G = (num >> 8 & 0x00FF) + amt;
+            const B = (num & 0x0000FF) + amt;
+            return '#' + (0x1000000 + (R < 255 ? R < 1 ? 0 : R : 255) * 0x10000 +
+                (G < 255 ? G < 1 ? 0 : G : 255) * 0x100 +
+                (B < 255 ? B < 1 ? 0 : B : 255))
+                .toString(16).slice(1);
+        }
+
+        function renderGuesses() {
+            const guessesHTML = guesses.map(guess => {
+                const isCorrect = guess.name.toLowerCase() === currentTeam.name.toLowerCase();
+                const sameConference = guess.conference === currentTeam.conference;
+                const sameDivision = guess.division === currentTeam.division;
+                
+                let conferenceBadge = '';
+                let divisionBadge = '';
+                
+                if (!isCorrect) {
+                    conferenceBadge = sameConference 
+                        ? '<span class="feedback-badge badge-correct">✓ Conference</span>'
+                        : '<span class="feedback-badge badge-incorrect">✗ Conference</span>';
+                    
+                    divisionBadge = sameDivision
+                        ? '<span class="feedback-badge badge-correct">✓ Division</span>'
+                        : '<span class="feedback-badge badge-incorrect">✗ Division</span>';
+                }
+                
+                return `
+                    <div class="guess-item ${isCorrect ? 'guess-correct' : 'guess-incorrect'}">
+                        <span class="guess-team-name">${isCorrect ? '✓' : '✗'} ${guess.name}</span>
+                        <div class="guess-feedback">
+                            ${conferenceBadge}
+                            ${divisionBadge}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            
+            document.getElementById('guessesList').innerHTML = guessesHTML;
+        }
+
+        function updateHints() {
+            const hintSection = document.getElementById('hintSection');
+            const hintText = document.getElementById('hintText');
+            
+            if (guesses.length >= 2 && !gameOver) {
+                hintSection.style.display = 'block';
+                if (guesses.length === 2) {
+                    hintText.textContent = `💡 Hint: This team is in the ${currentTeam.conference}ern Conference`;
+                } else if (guesses.length === 4) {
+                    hintText.textContent = `💡 Hint: This team plays in the ${currentTeam.division} Division`;
+                }
+            } else {
+                hintSection.style.display = 'none';
+            }
+        }
+
+        function submitGuess() {
+            if (gameOver) return;
+            
+            const input = document.getElementById('teamInput');
+            const guess = input.value.trim();
+            
+            if (!guess) return;
+            
+            // Check if guess matches any team
+            const matchedTeam = NBA_TEAMS.find(t => 
+                t.name.toLowerCase() === guess.toLowerCase()
+            );
+            
+            if (!matchedTeam) {
+                alert('Please enter a valid NBA team name');
+                return;
+            }
+            
+            guesses.push(matchedTeam);
+            input.value = '';
+            
+            const isCorrect = matchedTeam.name.toLowerCase() === currentTeam.name.toLowerCase();
+            
+            if (isCorrect) {
+                gameOver = true;
+                showResult(true);
+            } else if (guesses.length >= maxGuesses) {
+                gameOver = true;
+                showResult(false);
+            }
+            
+            renderGame();
+            
+            if (gameOver) {
+                document.getElementById('guessSection').style.display = 'none';
+            }
+        }
+
+        function showResult(won) {
+            const resultDiv = document.getElementById('resultMessage');
+            if (won) {
+                resultDiv.className = 'result-message result-win';
+                resultDiv.innerHTML = `🎉 Congratulations! You guessed the ${currentTeam.name} in ${guesses.length} ${guesses.length === 1 ? 'guess' : 'guesses'}!`;
+            } else {
+                resultDiv.className = 'result-message result-lose';
+                resultDiv.innerHTML = `😔 Game Over! The correct answer was the ${currentTeam.name}. Better luck next time!`;
+            }
+        }
+
+        // Autocomplete functionality
+        const input = document.getElementById('teamInput');
+        let currentFocus = -1;
+
+        input.addEventListener('input', function(e) {
+            const val = this.value;
+            closeAllLists();
+            if (!val) return;
+            currentFocus = -1;
+            
+            const list = document.getElementById('autocomplete-list');
+            
+            const filtered = NBA_TEAMS.filter(team => 
+                team.name.toLowerCase().includes(val.toLowerCase())
+            );
+            
+            filtered.forEach(team => {
+                const div = document.createElement('div');
+                div.className = 'autocomplete-item';
+                div.innerHTML = team.name;
+                div.addEventListener('click', function() {
+                    input.value = team.name;
+                    closeAllLists();
+                });
+                list.appendChild(div);
+            });
+        });
+
+        input.addEventListener('keydown', function(e) {
+            let items = document.getElementById('autocomplete-list');
+            if (items) items = items.getElementsByClassName('autocomplete-item');
+            
+            if (e.keyCode === 40) { // Down
+                currentFocus++;
+                addActive(items);
+                e.preventDefault();
+            } else if (e.keyCode === 38) { // Up
+                currentFocus--;
+                addActive(items);
+                e.preventDefault();
+            } else if (e.keyCode === 13) { // Enter
+                e.preventDefault();
+                if (currentFocus > -1 && items && items.length > 0) {
+                    items[currentFocus].click();
+                } else {
+                    submitGuess();
+                }
+            }
+        });
+
+        function addActive(items) {
+            if (!items) return;
+            removeActive(items);
+            if (currentFocus >= items.length) currentFocus = 0;
+            if (currentFocus < 0) currentFocus = items.length - 1;
+            items[currentFocus].classList.add('autocomplete-active');
+        }
+
+        function removeActive(items) {
+            for (let item of items) {
+                item.classList.remove('autocomplete-active');
+            }
+        }
+
+        function closeAllLists() {
+            document.getElementById('autocomplete-list').innerHTML = '';
+        }
+
+        document.addEventListener('click', function(e) {
+            if (e.target !== input) {
+                closeAllLists();
+            }
+        });
+
+        // Initialize game on load
+        newGame();
+    </script>
+</body>
+</html>
